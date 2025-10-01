@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  role      UserRole @default(CUSTOMER)
+  bookings  Booking[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Destination {
+  id          String      @id @default(cuid())
+  name        String
+  description String
+  location    String
+  country     String
+  image       String
+  price       Float
+  category    DestinationCategory
+  promotions  Promotion[]
+  packages    Package[]
+  createdAt   DateTime    @default(now())
+
+  @@map("destinations")
+}
+
+model Package {
+  id            String       @id @default(cuid())
+  name          String
+  description   String
+  price         Float
+  duration      Int // days
+  destination   Destination  @relation(fields: [destinationId], references: [id])
+  destinationId String
+  bookings      Booking[]
+  inclusions    PackageInclusion[]
+  createdAt     DateTime     @default(now())
+
+  @@map("packages")
+}
+
+model PackageInclusion {
+  id        String   @id @default(cuid())
+  item      String
+  package   Package  @relation(fields: [packageId], references: [id])
+  packageId String
+  createdAt DateTime @default(now())
+
+  @@map("package_inclusions")
+}
+
+model Promotion {
+  id            String      @id @default(cuid())
+  title         String
+  description   String
+  discount      Float
+  validUntil    DateTime
+  destination   Destination @relation(fields: [destinationId], references: [id])
+  destinationId String
+  createdAt     DateTime    @default(now())
+
+  @@map("promotions")
+}
+
+model Booking {
+  id          String      @id @default(cuid())
+  user        User        @relation(fields: [userId], references: [id])
+  userId      String
+  package     Package     @relation(fields: [packageId], references: [id])
+  packageId   String
+  travelDate  DateTime
+  travelers   Int
+  totalPrice  Float
+  status      BookingStatus @default(PENDING)
+  transport   TransportType
+  specialRequests String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("bookings")
+}
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+}
+
+enum DestinationCategory {
+  BEACH
+  MOUNTAIN
+  CITY
+  HISTORICAL
+  ADVENTURE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum TransportType {
+  AIR
+  LAND
+  SEA
+}
