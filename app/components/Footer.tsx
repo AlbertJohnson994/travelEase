@@ -174,7 +174,7 @@ export default function Footer() {
             <div className="space-y-2 text-sm text-gray-300 mb-4">
               <p>📍 123 Travel Street, Adventure City, AC 12345</p>
               <p>📞 +1 (555) 123-4567</p>
-              <p>✉️ concierge@travelease.com</p>
+              <p>✉️ albert.johnson994@gmail.com</p>
             </div>
 
             <div className="mt-4">
@@ -213,7 +213,7 @@ export default function Footer() {
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-gray-400 text-sm">
-              © {currentYear} TravelEase Cloud SaaS Inc. All rights reserved.
+              © {currentYear} AJ Tech SaaS Inc. All rights reserved.
             </div>
 
             <div className="flex flex-wrap justify-center space-x-6 text-sm">

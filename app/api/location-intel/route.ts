@@ -29,7 +29,7 @@ const DESTINATION_COORDS: Record<
   },
 };
 
-export function calculateHaversineKm(
+function calculateHaversineKm(
   lat1: number,
   lon1: number,
   lat2: number,
