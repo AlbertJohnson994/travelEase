@@ -1,14 +1,36 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getEffectiveUser } from "@/lib/auth";
+import { ensureSeeded } from "@/lib/seed-helper";
+import { TransportType } from "@prisma/client";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // In real app, get user ID from session
-    const userId = "temp-user-id";
+    await ensureSeeded(false);
+    const { searchParams } = new URL(request.url);
+    const showAll = searchParams.get("all") === "true";
+    const queryUserId = searchParams.get("userId");
+
+    const effectiveUser = await getEffectiveUser(true);
+    const targetUserId = queryUserId || effectiveUser?.id;
+
+    const whereClause = showAll
+      ? {}
+      : targetUserId
+        ? { userId: targetUserId }
+        : {};
 
     const bookings = await prisma.booking.findMany({
-      where: { userId },
+      where: whereClause,
       include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            plan: true,
+          },
+        },
         package: {
           include: {
             destination: {
@@ -17,6 +39,7 @@ export async function GET() {
                 name: true,
                 image: true,
                 location: true,
+                country: true,
               },
             },
             inclusions: true,
@@ -40,6 +63,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    await ensureSeeded(false);
+    const body = await request.json();
     const {
       packageId,
       travelers,
@@ -47,9 +72,10 @@ export async function POST(request: Request) {
       transport,
       specialRequests,
       totalPrice,
-    } = await request.json();
+      paymentMethod,
+      userId: bodyUserId,
+    } = body;
 
-    // Validate required fields
     if (!packageId || !travelers || !travelDate || !transport || !totalPrice) {
       return NextResponse.json(
         { error: "All booking fields are required" },
@@ -57,37 +83,55 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate travelers count
-    if (travelers < 1 || travelers > 10) {
+    const travelersNum = parseInt(String(travelers), 10);
+    if (isNaN(travelersNum) || travelersNum < 1 || travelersNum > 20) {
       return NextResponse.json(
-        { error: "Number of travelers must be between 1 and 10" },
+        { error: "Number of travelers must be between 1 and 20" },
         { status: 400 }
       );
     }
 
-    // Validate travel date (must be in future)
     const travelDateObj = new Date(travelDate);
-    if (travelDateObj <= new Date()) {
+    if (isNaN(travelDateObj.getTime())) {
       return NextResponse.json(
-        { error: "Travel date must be in the future" },
+        { error: "Invalid travel date" },
         { status: 400 }
       );
     }
 
-    // In real app, get user ID from session
-    const userId = "temp-user-id";
+    const effectiveUser = await getEffectiveUser(true);
+    const resolvedUserId = bodyUserId || effectiveUser?.id;
+
+    if (!resolvedUserId) {
+      return NextResponse.json(
+        { error: "Please sign in to create a booking" },
+        { status: 401 }
+      );
+    }
+
+    const validTransport: TransportType = ["AIR", "LAND", "SEA"].includes(
+      transport
+    )
+      ? (transport as TransportType)
+      : "AIR";
 
     const booking = await prisma.booking.create({
       data: {
-        userId,
+        userId: resolvedUserId,
         packageId,
-        travelers: parseInt(travelers),
+        travelers: travelersNum,
         travelDate: travelDateObj,
-        transport,
+        transport: validTransport,
+        paymentMethod: paymentMethod || "CARD",
+        paymentStatus: "PAID",
+        status: "CONFIRMED",
         specialRequests: specialRequests || "",
-        totalPrice: parseFloat(totalPrice),
+        totalPrice: parseFloat(String(totalPrice)),
       },
       include: {
+        user: {
+          select: { id: true, name: true, email: true, plan: true },
+        },
         package: {
           include: {
             destination: {
@@ -96,6 +140,7 @@ export async function POST(request: Request) {
                 name: true,
                 image: true,
                 location: true,
+                country: true,
               },
             },
             inclusions: true,

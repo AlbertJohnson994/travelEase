@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -12,35 +11,50 @@ export default function Contact() {
   });
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg("");
 
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (res.ok) {
+        setSubmitted(true);
+        setFormData({ name: "", email: "", subject: "", message: "" });
+      } else {
+        const err = await res.json();
+        setErrorMsg(err.error || "Failed to send message");
+      }
+    } catch {
+      setErrorMsg("Network error while sending message");
+    } finally {
       setLoading(false);
-      setSubmitted(true);
-      setFormData({ name: "", email: "", subject: "", message: "" });
-    }, 2000);
+    }
   };
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl">✓</span>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
+            ✓
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Message Sent!
+          <h2 className="text-2xl font-extrabold text-gray-900 mb-3">
+            Support Ticket Created!
           </h2>
-          <p className="text-gray-600 mb-6">
-            Thank you for contacting us. We&#39;ll get back to you within 24 hours.
+          <p className="text-gray-600 mb-6 text-sm">
+            Thank you for reaching out. Your inquiry has been logged in our
+            concierge inbox and a specialist will respond within 2 hours.
           </p>
           <button
             onClick={() => setSubmitted(false)}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition cursor-pointer"
           >
             Send Another Message
           </button>
@@ -54,21 +68,31 @@ export default function Contact() {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Have questions? We&#39;d love to hear from you. Send us a message and
-            we&#39;ll respond as soon as possible.
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+            24/7 Global Support
+          </span>
+          <h1 className="text-4xl font-extrabold text-gray-900 mt-2 mb-3">
+            Contact Our Travel Concierge
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Need help with a booking, corporate retreat quote, or membership
+            upgrade? Send us a message directly.
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           {/* Contact Form */}
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8">
+            <h2 className="text-2xl font-bold mb-6">Send Us a Message</h2>
+            {errorMsg && (
+              <div className="mb-4 bg-red-50 text-red-700 p-3 rounded-xl text-sm">
+                ⚠️ {errorMsg}
+              </div>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Your Name *
                   </label>
                   <input
@@ -78,11 +102,11 @@ export default function Contact() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 focus:border-blue-500 focus:outline-none text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                     Email Address *
                   </label>
                   <input
@@ -92,13 +116,13 @@ export default function Contact() {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 focus:border-blue-500 focus:outline-none text-sm"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Subject *
                 </label>
                 <input
@@ -108,104 +132,83 @@ export default function Contact() {
                   onChange={(e) =>
                     setFormData({ ...formData, subject: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 focus:border-blue-500 focus:outline-none text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Message *
                 </label>
                 <textarea
                   required
-                  rows={6}
+                  rows={5}
                   value={formData.message}
                   onChange={(e) =>
                     setFormData({ ...formData, message: e.target.value })
                   }
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-gray-300 px-3.5 py-2.5 focus:border-blue-500 focus:outline-none text-sm"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl hover:bg-blue-700 disabled:opacity-50 font-bold cursor-pointer transition"
               >
-                {loading ? "Sending..." : "Send Message"}
+                {loading ? "Submitting Ticket..." : "Submit Support Request"}
               </button>
             </form>
           </div>
 
           {/* Contact Information */}
-          <div className="space-y-8">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <h2 className="text-2xl font-bold mb-6">Get in Touch</h2>
-
-              <div className="space-y-4">
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-8">
+              <h2 className="text-2xl font-bold mb-6">Global Offices & Desk</h2>
+              <div className="space-y-5 text-sm">
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-blue-600">📍</span>
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                    📍
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Address</h3>
+                    <h3 className="font-bold text-gray-900">Headquarters</h3>
                     <p className="text-gray-600">
-                      123 Travel Street
-                      <br />
-                      Adventure City, AC 12345
+                      123 Travel Street, Adventure City, AC 12345
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-blue-600">📞</span>
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                    📞
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Phone</h3>
+                    <h3 className="font-bold text-gray-900">Direct Concierge</h3>
                     <p className="text-gray-600">+1 (555) 123-4567</p>
                   </div>
                 </div>
 
                 <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-blue-600">✉️</span>
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                    ✉️
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Email</h3>
-                    <p className="text-gray-600">info@travelease.com</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-blue-600">🕒</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      Business Hours
-                    </h3>
-                    <p className="text-gray-600">
-                      Monday - Friday: 9:00 AM - 6:00 PM
-                      <br />
-                      Saturday: 10:00 AM - 4:00 PM
-                      <br />
-                      Sunday: Closed
-                    </p>
+                    <h3 className="font-bold text-gray-900">Email</h3>
+                    <p className="text-gray-600">concierge@travelease.com</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Emergency Contact */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-red-800 mb-2">
-                Emergency Contact
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+              <h3 className="text-lg font-bold text-red-800 mb-1">
+                🚨 24/7 In-Trip Emergency Hotline
               </h3>
-              <p className="text-red-700 text-sm mb-3">
-                For urgent travel assistance outside business hours
+              <p className="text-red-700 text-sm mb-2">
+                For urgent flight rebooking or medical assistance during active
+                trips:
               </p>
-              <div className="text-red-800 font-semibold">
+              <div className="text-red-900 font-extrabold text-lg">
                 +1 (555) 911-TRAVEL
               </div>
             </div>

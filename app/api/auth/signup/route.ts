@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { ensureSeeded } from "@/lib/seed-helper";
+import { AUTH_COOKIE_NAME } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { name, email, password, phone } = await request.json();
+    await ensureSeeded(false);
+    const { name, email, password, phone, plan } = await request.json();
 
-    // Validate required fields
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, email, and password are required" },
@@ -14,16 +16,15 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate email format
+    const normalizedEmail = email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(normalizedEmail)) {
       return NextResponse.json(
         { error: "Invalid email format" },
         { status: 400 }
       );
     }
 
-    // Validate password strength
     if (password.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters long" },
@@ -31,28 +32,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "User already exists" },
+        { error: "An account with this email already exists" },
         { status: 409 }
       );
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: name.trim(),
+        email: normalizedEmail,
         password: hashedPassword,
         phone: phone || null,
+        plan: plan === "PRO" || plan === "ELITE" ? plan : "FREE",
       },
       select: {
         id: true,
@@ -60,17 +59,27 @@ export async function POST(request: Request) {
         name: true,
         phone: true,
         role: true,
+        plan: true,
         createdAt: true,
       },
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: "User created successfully",
         user,
       },
       { status: 201 }
     );
+
+    response.cookies.set(AUTH_COOKIE_NAME, user.id, {
+      httpOnly: false,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: "lax",
+    });
+
+    return response;
   } catch (error) {
     console.error("Failed to create user:", error);
     return NextResponse.json(
