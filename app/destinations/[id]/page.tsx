@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/app/components/AuthProvider";
+import { useLocationIntel } from "@/app/components/LocationProvider";
 
 interface Inclusion {
   id: string;
@@ -65,6 +66,7 @@ export default function DestinationDetail() {
   const destinationId = params.id as string;
 
   const { user, isWishlisted, toggleWishlist } = useAuth();
+  const { intel, getRouteForCountry } = useLocationIntel();
   const [destination, setDestination] = useState<DestinationDetailData | null>(
     null
   );
@@ -161,39 +163,47 @@ export default function DestinationDetail() {
   }
 
   const saved = isWishlisted(destination.id);
+  const routeInfo = getRouteForCountry(destination.country);
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Banner */}
-      <div className="relative h-[420px] overflow-hidden">
+      <div className="relative h-[360px] sm:h-[420px] overflow-hidden">
         <img
           src={destination.image}
           alt={destination.name}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30 flex items-end">
-          <div className="container mx-auto px-4 pb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 text-white">
+          <div className="container mx-auto px-4 pb-8 sm:pb-10 flex flex-col md:flex-row md:items-end justify-between gap-4 text-white">
             <div>
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
                   {destination.category}
                 </span>
                 <span className="bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                  ★ {destination.rating || 4.8} ({destination.reviews?.length || 0}{" "}
-                  reviews)
+                  ★ {destination.rating || 4.8} (
+                  {destination.reviews?.length || 0} reviews)
                 </span>
+                {routeInfo && (
+                  <span className="bg-white/20 backdrop-blur-xs text-white px-3 py-1 rounded-full text-xs font-bold">
+                    ✈️ {routeInfo.distanceKm.toLocaleString()} km from{" "}
+                    {intel?.location.city || "You"} (~
+                    {routeInfo.estimatedFlightHours}h)
+                  </span>
+                )}
               </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold mb-2">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2">
                 {destination.name}
               </h1>
-              <p className="text-lg text-gray-200">
+              <p className="text-base sm:text-lg text-gray-200">
                 📍 {destination.location}, {destination.country}
               </p>
             </div>
 
             <button
               onClick={() => toggleWishlist(destination.id)}
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-xs text-white px-5 py-2.5 rounded-xl font-semibold border border-white/30 transition w-fit cursor-pointer"
+              className="bg-white/20 hover:bg-white/30 backdrop-blur-xs text-white px-5 py-2.5 rounded-xl font-semibold border border-white/30 transition w-fit cursor-pointer text-sm"
             >
               {saved ? "❤️ Saved in Wishlist" : "🤍 Save Destination"}
             </button>
@@ -202,7 +212,7 @@ export default function DestinationDetail() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-10">
+      <div className="container mx-auto px-4 py-8 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-8">
@@ -211,9 +221,42 @@ export default function DestinationDetail() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 About {destination.name}
               </h2>
-              <p className="text-gray-700 leading-relaxed text-lg">
+              <p className="text-gray-700 leading-relaxed text-base sm:text-lg">
                 {destination.description}
               </p>
+            </div>
+
+            {/* Interactive Google Map of Destination */}
+            <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
+              <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    🗺️ Interactive Destination & Tourist Sites Map
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Explore beaches, mountains, hotels, and landmarks around{" "}
+                    {destination.location}, {destination.country}
+                  </p>
+                </div>
+                <Link
+                  href="/explore"
+                  className="text-xs font-bold text-blue-600 hover:underline"
+                >
+                  Open Full Tourist Radar →
+                </Link>
+              </div>
+              <div className="h-72 sm:h-80 w-full">
+                <iframe
+                  title={`Map of ${destination.name}`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                    `${destination.location}, ${destination.country}`
+                  )}&z=11&output=embed`}
+                />
+              </div>
             </div>
 
             {/* Available Packages */}
@@ -231,7 +274,7 @@ export default function DestinationDetail() {
                 {destination.packages.map((pkg) => (
                   <div
                     key={pkg.id}
-                    className="border border-gray-200 rounded-2xl p-6 hover:border-blue-500 hover:shadow-md transition"
+                    className="border border-gray-200 rounded-2xl p-5 sm:p-6 hover:border-blue-500 hover:shadow-md transition"
                   >
                     <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
                       <div>
@@ -276,19 +319,13 @@ export default function DestinationDetail() {
                       </span>
                       <Link
                         href={`/booking/${pkg.id}`}
-                        className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition"
+                        className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition text-sm"
                       >
                         Book This Package →
                       </Link>
                     </div>
                   </div>
                 ))}
-
-                {destination.packages.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    No packages available for this destination yet.
-                  </div>
-                )}
               </div>
             </div>
 
@@ -298,7 +335,6 @@ export default function DestinationDetail() {
                 Verified Traveler Reviews ({destination.reviews?.length || 0})
               </h2>
 
-              {/* Write a Review Form */}
               <form
                 onSubmit={handleReviewSubmit}
                 className="bg-gray-50 rounded-xl p-5 mb-8 border border-gray-200"
@@ -351,7 +387,6 @@ export default function DestinationDetail() {
                 </button>
               </form>
 
-              {/* Reviews List */}
               <div className="space-y-4">
                 {destination.reviews && destination.reviews.length > 0 ? (
                   destination.reviews.map((rev) => (
@@ -392,7 +427,6 @@ export default function DestinationDetail() {
 
           {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Price & Promo Summary */}
             <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100">
               <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Base Destination Rate
@@ -435,6 +469,41 @@ export default function DestinationDetail() {
               )}
             </div>
 
+            {/* Flight Telemetry Card from Client Location */}
+            {routeInfo && (
+              <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-xs">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-blue-300 mb-3">
+                  ✈️ Your Travel Telemetry
+                </h3>
+                <div className="space-y-2.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">From:</span>
+                    <span className="font-bold">
+                      {intel?.location.city || "Detected City"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Arrival Hub:</span>
+                    <span className="font-bold text-xs">
+                      {routeInfo.airport}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Flight Distance:</span>
+                    <span className="font-bold">
+                      {routeInfo.distanceKm.toLocaleString()} km
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Est. Air Time:</span>
+                    <span className="font-bold text-emerald-400">
+                      ~{routeInfo.estimatedFlightHours} hours
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Quick Facts */}
             <div className="bg-white rounded-2xl shadow-xs border border-gray-100 p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">
@@ -463,25 +532,9 @@ export default function DestinationDetail() {
                 </div>
               </div>
             </div>
-
-            {/* Concierge Help */}
-            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-2xl p-6">
-              <h3 className="text-lg font-bold mb-2">Need a Custom Group Quote?</h3>
-              <p className="text-blue-100 text-sm mb-4">
-                Our 24/7 travel advisors can customize flights, private villas,
-                and corporate retreats.
-              </p>
-              <Link
-                href="/contact"
-                className="block w-full text-center bg-white text-blue-700 font-semibold py-2.5 rounded-xl hover:bg-blue-50 transition"
-              >
-                Contact Concierge
-              </Link>
-            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
-

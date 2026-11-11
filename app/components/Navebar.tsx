@@ -4,17 +4,20 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./AuthProvider";
+import { useLocationIntel } from "./LocationProvider";
 
 export default function Navebar() {
   const pathname = usePathname();
   const { user, logout, wishlist } = useAuth();
+  const { intel, setShowPromptModal } = useLocationIntel();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
+    { href: "/explore", label: "📍 Near Me & Maps", badge: "LIVE" },
     { href: "/destinations", label: "Destinations" },
     { href: "/packages", label: "Packages" },
     { href: "/promotions", label: "Deals" },
-    { href: "/planner", label: "AI Trip Planner", badge: "NEW" },
+    { href: "/planner", label: "AI Planner" },
     { href: "/pricing", label: "Memberships" },
     { href: "/my-bookings", label: "My Bookings" },
   ];
@@ -31,42 +34,60 @@ export default function Navebar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-xs">
-      {/* Top Promo Banner */}
-      <div className="bg-gradient-to-r from-blue-900 via-blue-700 to-indigo-800 text-white text-xs py-2 px-4">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-xs">
+      {/* Top Location & Promo Strip */}
+      <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white text-xs py-2 px-4">
         <div className="container mx-auto flex flex-wrap justify-between items-center gap-2">
-          <p className="font-medium">
-            ✨ <span className="font-bold">TravelEase SaaS Pass:</span> Get up
-            to 20% automatic member discount on all global packages & zero
-            booking fees.
-          </p>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowPromptModal(true)}
+              className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 px-2.5 py-0.5 rounded-full font-semibold transition cursor-pointer"
+              title="Click to update location permissions"
+            >
+              <span>📍</span>
+              <span>
+                {intel?.location.city
+                  ? `${intel.location.city}, ${intel.location.countryCode || intel.location.country}`
+                  : "Detect Location"}
+              </span>
+              {intel?.weather && (
+                <span className="text-blue-200 ml-1">
+                  {intel.weather.icon} {intel.weather.temperatureC}°C
+                </span>
+              )}
+            </button>
+            <span className="hidden md:inline text-slate-300">
+              • Save up to 20% with TravelEase Membership
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-3">
             <Link
-              href="/pricing"
+              href="/explore"
               className="underline hover:text-blue-200 font-semibold"
             >
-              Upgrade Plan →
+              Tourist Radar →
             </Link>
             <Link
               href="/admin"
               className="bg-white/15 hover:bg-white/25 px-2.5 py-0.5 rounded-full font-medium transition"
             >
-              📊 SaaS Admin Portal
+              📊 SaaS Admin
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Main Navbar */}
+      {/* Main Responsive Navbar */}
       <nav className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:shadow-md transition">
+          <Link href="/" className="flex items-center space-x-2 group shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
               ✈️
             </div>
             <div>
-              <span className="text-xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 TravelEase
               </span>
               <span className="hidden sm:inline-block ml-1.5 text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200">
@@ -76,41 +97,29 @@ export default function Navebar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <div className="hidden xl:flex items-center space-x-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
+                className={`px-2.5 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-1 ${
                   isActive(link.href)
-                    ? "bg-blue-50 text-blue-600 font-semibold"
+                    ? "bg-blue-50 text-blue-600 font-bold"
                     : "text-gray-700 hover:text-blue-600 hover:bg-gray-50"
                 }`}
               >
                 <span>{link.label}</span>
                 {link.badge && (
-                  <span className="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.2 rounded-full">
+                  <span className="text-[9px] font-extrabold bg-emerald-100 text-emerald-700 px-1.5 py-0.2 rounded-full">
                     {link.badge}
                   </span>
                 )}
               </Link>
             ))}
-            {user?.role === "ADMIN" && (
-              <Link
-                href="/admin"
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  isActive("/admin")
-                    ? "bg-indigo-50 text-indigo-700 font-semibold"
-                    : "text-indigo-600 hover:bg-indigo-50"
-                }`}
-              >
-                Admin
-              </Link>
-            )}
           </div>
 
           {/* Right Actions */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-2.5">
             <Link
               href="/wishlist"
               className="relative p-2 text-gray-600 hover:text-red-500 hover:bg-gray-100 rounded-lg transition"
@@ -160,7 +169,7 @@ export default function Navebar() {
                 </Link>
                 <button
                   onClick={logout}
-                  className="text-xs font-medium text-gray-600 hover:text-red-600 px-2.5 py-2 rounded-lg hover:bg-red-50 transition"
+                  className="text-xs font-medium text-gray-600 hover:text-red-600 px-2.5 py-2 rounded-lg hover:bg-red-50 transition cursor-pointer"
                 >
                   Sign Out
                 </button>
@@ -169,13 +178,13 @@ export default function Navebar() {
               <div className="flex items-center space-x-2">
                 <Link
                   href="/auth/login"
-                  className="text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition"
+                  className="text-xs sm:text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg hover:bg-gray-50 transition"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="text-sm font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-xs transition"
+                  className="text-xs sm:text-sm font-semibold bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 shadow-xs transition"
                 >
                   Get Started
                 </Link>
@@ -183,11 +192,18 @@ export default function Navebar() {
             )}
           </div>
 
-          {/* Mobile Hamburger Button */}
-          <div className="flex items-center space-x-2 lg:hidden">
+          {/* Mobile & Tablet Hamburger Button */}
+          <div className="flex items-center space-x-2 xl:hidden">
+            <button
+              onClick={() => setShowPromptModal(true)}
+              className="p-2 text-xs font-bold bg-blue-50 text-blue-700 rounded-lg"
+              title="Location Settings"
+            >
+              📍
+            </button>
             <Link
               href="/wishlist"
-              className="relative p-2 text-gray-600 hover:text-red-500 rounded-lg"
+              className="relative p-2 text-gray-600 hover:text-red-500 rounded-lg text-sm"
             >
               ❤️
               {wishlist.length > 0 && (
@@ -227,37 +243,42 @@ export default function Navebar() {
           </div>
         </div>
 
-        {/* Mobile Menu Dropdown */}
+        {/* Mobile / Tablet Menu Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-gray-100 space-y-2">
+          <div className="xl:hidden py-4 border-t border-gray-100 space-y-1.5">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-sm font-medium ${
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium ${
                   isActive(link.href)
-                    ? "bg-blue-50 text-blue-600 font-semibold"
+                    ? "bg-blue-50 text-blue-600 font-bold"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                {link.label}
+                <span>{link.label}</span>
+                {link.badge && (
+                  <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
+                    {link.badge}
+                  </span>
+                )}
               </Link>
             ))}
             <Link
               href="/admin"
               onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-sm font-medium text-indigo-600 hover:bg-indigo-50"
+              className="block px-3 py-2.5 rounded-xl text-sm font-semibold text-indigo-600 hover:bg-indigo-50"
             >
               📊 SaaS Admin Dashboard
             </Link>
-            <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+            <div className="pt-3 border-t border-gray-100 flex flex-col gap-2 md:hidden">
               {user ? (
                 <>
                   <Link
                     href="/profile"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="px-3 py-2 rounded-lg bg-gray-50 text-sm font-semibold text-gray-900 flex justify-between items-center"
+                    className="px-3 py-2.5 rounded-xl bg-gray-50 text-sm font-semibold text-gray-900 flex justify-between items-center"
                   >
                     <span>👤 {user.name}</span>
                     <span
@@ -273,7 +294,7 @@ export default function Navebar() {
                       setMobileMenuOpen(false);
                       logout();
                     }}
-                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg"
+                    className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-xl"
                   >
                     Sign Out
                   </button>
@@ -283,14 +304,14 @@ export default function Navebar() {
                   <Link
                     href="/auth/login"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-center py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700"
+                    className="text-center py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/auth/signup"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="text-center py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold"
+                    className="text-center py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold"
                   >
                     Sign Up
                   </Link>
