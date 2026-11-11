@@ -1,6 +1,9 @@
 # ✈️ TravelEase Cloud — Full-Stack Travel Booking, Geolocation Radar & Membership SaaS
 
-**TravelEase Cloud** is a responsive, end-to-end Travel Booking & Location Intelligence SaaS platform built with **Next.js 15 (App Router & Turbopack)**, **React 19**, **TypeScript**, **Prisma ORM (SQLite)**, and **Tailwind CSS v4**.
+🌐 **Live Production Demo (Vercel)**: [https://travel-ease-omega-ten.vercel.app](https://travel-ease-omega-ten.vercel.app)
+📦 **GitHub Repository**: [https://github.com/AlbertJohnson994/travelEase](https://github.com/AlbertJohnson994/travelEase)
+
+**TravelEase Cloud** is a responsive, end-to-end Travel Booking & Location Intelligence SaaS platform built with **Next.js 15.5.29 (App Router & Turbopack)**, **React 19**, **TypeScript**, **Prisma ORM (SQLite)**, and **Tailwind CSS v4**.
 
 ---
 
@@ -142,3 +145,17 @@ TravelEase/
 
 5. **Open in your browser**:
    Navigate to [http://localhost:3000](http://localhost:3000) (or the port shown in your terminal, e.g., `http://localhost:3001`). The database automatically seeds itself on first launch.
+
+---
+
+## ☁️ Deploying to Vercel
+
+This project is pre-configured for **Vercel Serverless Functions**:
+- **`postinstall` Hook**: Automatically runs `prisma generate` during installation (`package.json`).
+- **Serverless SQLite Runtime (`lib/prisma.ts` & `next.config.ts`)**: Bundles `prisma/dev.db` via `outputFileTracingIncludes` and automatically copies it into writable `/tmp/dev.db` on Vercel serverless cold starts so read and write operations work out of the box.
+
+```bash
+# Link and deploy to Vercel Production
+vercel link --yes
+vercel deploy --prod --yes
+```
